@@ -79,9 +79,48 @@ test/20221020_Celegans/output/Celegans.idx
 
 ```
 
+## fastqc
+
+
+
+```
+
+mkdir test/20221020_Celegans/output/qc_SRR21711053
+
+fastqc \
+-o test/20221020_Celegans/output/ \
+--extract \
+data/fastq/SRR21711053.fastq.gz
+
+# this outputs to html i need like csv
+
+```
+
+so the mean length is 120 
+
+
 ## Kallisto Quant 
 
+```
+# ive just written the snakemake rule 
+# ill test the command for quant its essentially this
 
+kallisto quant \
+-i test/20221020_Celegans/output/Celegans.idx \
+-o test/20221020_Celegans/output/SRR21711053_quant \
+--single --single-overhang \
+-l 120 -s 10 \
+data/fastq/SRR21711053.fastq.gz
+
+
+# this needs the -l and -s 
+# the average lentgh and standard deviation of 
+# this means i need to run FastQC for each sample 
+
+
+
+
+```
 
 
 
