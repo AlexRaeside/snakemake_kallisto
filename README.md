@@ -5,6 +5,10 @@ date: "2022-10-20"
 ---
 
 
+## What are the main outputs i need ot use 
+
+
+
 ## What is Snakemake 
 
 
