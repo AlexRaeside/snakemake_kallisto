@@ -14,3 +14,5 @@ fastq_R1: [
 fastq_R2 : 
 threads: 1
 single_cell: False 
+metadata: 
+fastq_dir: "data/fastq"

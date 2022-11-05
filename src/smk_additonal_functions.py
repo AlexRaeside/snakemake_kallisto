@@ -7,6 +7,16 @@ import pandas as pd
 # needs to be vectorized 
 
 
+
+
+
+
+
+
+
+
+
+
 def output_sample_name(fastq_name):
     
     fastq_exp = os.path.expanduser(fastq_name)
