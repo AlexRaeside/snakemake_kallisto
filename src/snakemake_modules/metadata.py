@@ -46,11 +46,6 @@ def write_sample_metadata(fastq_r1_list, out_dir):
     sample_tbl.to_csv(out_file, index = False)
     
     
-    
-    
-    
-# a fucntion that looks into a directory and gets the fastq files paths
-
 def get_fastq_in_dir(fastq_dir):
     
     files_list = os.listdir(fastq_dir)

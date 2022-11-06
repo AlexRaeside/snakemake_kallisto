@@ -1,7 +1,4 @@
-# The config file for running C.elegans 
-# Has all the paramaters needed to run a full pipeline
-
-run_name: testRunA
+run_name: "testRunA"
 output_dir: "test/20221020_Celegans/output"
 fasta: "data/transcriptomes/Celegans.cdna.all.fa.gz"
 idx_name: "Celegans"
@@ -9,10 +6,10 @@ fastq_R1: [
     "data/fastq/SRR21711053.fastq.gz",
     "data/fastq/SRR21711057.fastq.gz",
     "data/fastq/SRR21711073.fastq.gz",
-    "data/fastq/SRR21711077.fastq.gz"
-    ]
-fastq_R2 : 
+    "data/fastq/SRR21711077.fastq.gz"]
+fastq_R2 : ""
 threads: 1
 single_cell: False 
-metadata: 
+metadata: ""
 fastq_dir: "data/fastq"
+

@@ -1,0 +1,82 @@
+
+# read in yaml
+
+
+configfile: "src/test.yaml"
+
+import snakemake_modules.kallisto as kal
+
+rule make_metadata:
+    # generate a metadata csv file from either the list of fastq paths 
+    # or a path to a directory with fastq or fastq.gz
+    input:
+        fq_files = config["fastq_R1"],
+        fq_dir = config["fastq_dir"],
+        out_dir = config["output_dir"]
+    output:
+        metadata = config["output_dir"] + "/metadata/metadata.csv"
+    # if there were no fastq files given then get fastqs from fq_dir
+    run:
+        
+        import snakemake_modules.metadata as meta
+        
+        if len(input.fq_files) != 0:
+            fq_paths = input.fq_files
+        if len(input.fq_files) == 0:
+            fq_paths =  meta.get_fastq_in_dir(input.fq_dir)
+        meta.write_sample_metadata(fq_paths, input.out_dir)
+
+
+rule kallisto_index:
+    input:
+        fasta = config["fasta"]
+    output:
+        index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"])
+    shell:
+        "kallisto index --index={output.index} {input.fasta}"
+    
+    
+rule fastqc_report:
+    input: 
+        fq_file = multiext(
+            "{wildcards.fq_dir}/{wildcards.fq}",
+            ".fastq.gz", ".fastq", ".FATSQ.gz", "FASTQ.GZ", ""),
+        out_dir = config{"output_dir"}
+    output:
+        qc_report_file = expand(
+            "{out}/fastqc/{wildcards.fq}_fastqc/fastqc_data.txt", 
+            out = config["output_dir"])
+    run:
+        fasqc_dir = config["output_dir"] + "/fastqc"
+        if not os.path.exists(fastqc_dir):
+            os.mkdir('sample')
+    shell:
+        "fastqc -o {input.out_dir}/fastqc --extract {wildcards.fq}"
+
+rule kallisto_quant:
+    input:
+        fq_file = multiext(
+            "{wildcards.fq_dir}/{wildcards.fq}",
+            ".fastq.gz", ".fastq", ".FATSQ.gz", "FASTQ.GZ", ""),
+        fq_report = expand(
+            "{out}/fastqc/{wildcards.fq}_fastqc/fastqc_data.txt",
+            out = config["output_dir"]),
+        index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"])
+    output:
+        counts_tbl = expand(
+            "{out}/count/{wildcards.fq}/abundance.tsv",
+            out = config["output_dir"])
+        counts_summary = expand(
+            "{out}/count/{wildcards.fq}/run_info.json",
+            out = config["output_dir"])
+    run:
+
+
+rule create_blank_aggregate_tables:
+
+
+
+rule aggregate_counts:
+
+
+rule aggregate_complete:

@@ -1,0 +1,4 @@
+fastq_R1 : []
+fastq_dir: "data/fastq"
+output_dir: "test/20221020_Celegans/output"
+fasta: "data/transcriptomes/Celegans.cdna.all.fa.gz"
