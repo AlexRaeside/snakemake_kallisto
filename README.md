@@ -141,6 +141,25 @@ snakemake -c1 -s src/Snakefile test/20221020_Celegans/output/fastqc/SRR21711077_
 
 ```
 
+
+
+
+```
+
+snakemake -c1 -s src/Snakefile test/20221020_Celegans/output/done/all_counts_moved.done
+
+snakemake -c1 --dag -s src/Snakefile test/20221020_Celegans/output/done/all_counts_moved.done | dot -Tsvg > dag.svg
+
+
+```
+
+
+
+
+
+
+
+
 it works now for kallisto quant 
 which base command looks like
 
@@ -161,6 +180,10 @@ lets try the counts file
 snakemake -c1 -s src/Snakefile test/20221020_Celegans/output/tables/counts_summary.csv
 
 ```
+```
+test/20221020_Celegans/output/quant/SRR21711077/run_info.json
+test/20221020_Celegans/output//tables/counts_summary.csv
 
+```
 
 

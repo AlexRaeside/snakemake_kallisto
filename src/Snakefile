@@ -12,43 +12,17 @@ import snakemake_modules.metadata as meta
 import pandas as pd
 
 
-##--- required modules ---------------------------------------------------------
+##--- global vars --------------------------------------------------------------
 
-
-
-
-rule make_metadata_table:
-    # generate a metadata csv file from either the list of fastq paths 
-    # or a path to a directory with fastq or fastq.gz
-    input:
-        fq_files = config["fastq_R1"],
-        fq_dir = config["fastq_dir"],
-        out_dir = config["output_dir"]
-    output:
-        metadata = config["output_dir"] + "/metadata/metadata.csv"
-    # if there were no fastq files given then get fastqs from fq_dir
-    run:
-        
-        
-        if len(input.fq_files) != 0:
-            fq_paths = input.fq_files
-        if len(input.fq_files) == 0:
-            fq_paths =  meta.get_fastq_in_dir(input.fq_dir)
-        meta.write_sample_metadata(fq_paths, input.out_dir)
-
-
-rule kallisto_index:
-    input:
-        fasta = config["fasta"]
-    output:
-        index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"])
-    shell:
-        "kallisto index --index={output.index} {input.fasta}"
-    
-    
-    
 fastqc_dir = config["output_dir"] + "/fastqc"
-metadata_path = config["output_dir"] + "/metadata/metadata.csv" 
+metadata_dir = config["output_dir"] + "/metadata" 
+quant_dir = config["output_dir"] + "/quant"
+tables_dir = config["output_dir"] + "/tables"
+
+##---- snakemake functions -----------------------------------------------------
+# Different then the functions in the modules as snakemake functions
+# take one argument (the wildcard) and use global vars like the config data
+
 
 def fastq_path(sample_name):
     
@@ -58,20 +32,6 @@ def fastq_path(sample_name):
     fastq = sample_info["fastqR1_file"].loc[sample_info.index[0]]
     return(fastq)
 
-
-rule fastqc:
-    input: 
-        fq = fastq_path,
-        metadata = metadata_path
-    output:
-        fastqc_report = fastqc_dir + "/{sample}_fastqc/fastqc_data.txt"
-    run:
-        if not os.path.exists(fastqc_dir):
-            os.mkdir(fastqc_dir)
-        shell("fastqc -o {fastqc_dir} --extract {input.fq}")
-
-
-quant_dir = config["output_dir"] + "/quant"
 
 def get_mean_len(sample_name):
     
@@ -83,6 +43,66 @@ def get_mean_len(sample_name):
     length_line =  file.readlines()[8]
     length = length_line.split()[2]
     return(length)
+
+
+##--- generate metadata --------------------------------------------------------
+# Since the sample names in the metadata is a key input parameter for many
+# rules. The metadata table is generated as soon as the snakemake is executed 
+# unless there is already a metadata and the config does not require a new one
+
+
+# if there is either new metadata or there is a metadata but the config
+# says 
+
+if not os.path.exists(metadata_dir + "/metadata.csv") or config["generate_meta"] == True:
+    
+    #print( "Generating metadata")
+    
+    # if the fastq files are give in config use in meta
+    if len(config["fastq_R1"]) != 0:
+        fq_paths = config["fastq_R1"]
+    # if the fastq files are not given in config get from dir 
+    if len(config["fastq_R1"]) == 0:
+        fq_paths =  meta.get_fastq_in_dir(config["fastq_dir"])
+    # use fastq files to generate a metadata table 
+    meta.write_sample_metadata(fq_paths, config["output_dir"])
+#else:
+    #print( "Using prexisting metadata")
+
+
+# from the metadata get sample names 
+# this varibale is used many rules 
+
+SAMPLES = meta.get_samples(metadata_dir + "/metadata.csv")
+first_sample = SAMPLES[0]
+
+#print(first_sample)
+
+
+##--- Snakemake rules ----------------------------------------------------------
+
+
+
+
+rule kallisto_index:
+    input:
+        fasta = config["fasta"]
+    output:
+        index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"])
+    shell:
+        "kallisto index --index={output.index} {input.fasta}"
+    
+    
+rule fastqc:
+    input: 
+        fq = fastq_path,
+        metadata = metadata_dir + "/metadata.csv"
+    output:
+        fastqc_report = fastqc_dir + "/{sample}_fastqc/fastqc_data.txt"
+    run:
+        if not os.path.exists(fastqc_dir):
+            os.mkdir(fastqc_dir)
+        shell("fastqc -o {fastqc_dir} --extract {input.fq}")
 
 
 
@@ -110,17 +130,9 @@ rule kallisto_quant:
         )
 
 
-# this is weird beacuse it can work with any one of the sample wildcards
-# this i need two functions that get me lists to expand on with all n abundance.tsv
-
-
-
-
-rule create_test:
+rule create_blank_files:
     input:
-        samples = "test",
-        count_tbl = quant_dir + "/{sample}/abundance.tsv",
-        count_summary = quant_dir + "/{sample}/run_info.json"
+        count_tbl = quant_dir + "/" + first_sample + "/abundance.tsv"
     output:
         total_counts_tbl = config["output_dir"] +"/tables/counts_raw.csv",
         total_counts_summary = config["output_dir"] +"/tables/counts_summary.csv"
@@ -129,5 +141,45 @@ rule create_test:
         if not os.path.exists(tables_dir):
             os.mkdir(tables_dir)
         
-        kal.create_blank_tbls("{input.count_tbl}", tables_dir)
+        kal.create_blank_tbls(input.count_tbl , tables_dir)
+
+
+rule aggregate_counts:
+    input: 
+        sample_counts =  quant_dir + "/{sample}/abundance.tsv", 
+        sample_summary = quant_dir + "/{sample}/run_info.json", 
+        total_counts_tbl = config["output_dir"] +"/tables/counts_raw.csv",
+        total_counts_summary = config["output_dir"] +"/tables/counts_summary.csv"
+    output:
+        move_done = config["output_dir"] +"/done/counts_moved_{sample}.done"
+    params:
+        sample_name = "{sample}"
+    run: 
+        
+        kal.aggregate_counts(
+            params.sample_name, input.sample_counts, input.total_counts_tbl)
+        
+        kal.aggregate_summary(
+            params.sample_name, input.sample_summary, input.total_counts_summary)
+        
+        
+        shell(
+            "touch {output.move_done}"
+        )
+
+
+
+rule aggregation_complete:
+    input: 
+        move_done = expand(
+            "{out}/done/counts_moved_{sample_id}.done",
+            out = config["output_dir"], sample_id = SAMPLES)
+    output:
+        all_counts_moved = config["output_dir"] + "/done/all_counts_moved.done"
+    
+    run:
+        shell("touch {output.all_counts_moved}")
+    
+
+
 

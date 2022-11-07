@@ -13,7 +13,7 @@
 import pandas as pd
 import yaml
 import os
-
+import numpy as np
 
 def output_sample_name(fastq_name):
     
@@ -59,6 +59,13 @@ def get_fastq_in_dir(fastq_dir):
     return(fastq_paths)
 
 
+def get_samples(metadata_path):
+    
+    meta = pd.read_csv(metadata_path)
+    sample_matrix = meta[meta.columns[0]].to_numpy()
+    samples = sample_matrix.tolist()
+    
+    return(samples)
 
 
 

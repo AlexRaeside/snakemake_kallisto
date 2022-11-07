@@ -2,6 +2,8 @@
 
 import os 
 import pandas as pd
+import json as json
+import csv
 
 def get_indx_name(fasta_path):
     
@@ -34,4 +36,42 @@ def create_blank_tbls(counts_file, out_path):
     summary_tbl.to_csv(
         out_path + "/counts_summary.csv", index=False, header=None)
 
+
+def aggregate_counts(sample, sample_counts_path, total_counts_path):
+    
+    counts =  pd.read_csv(sample_counts_path, sep="\t")["est_counts"].tolist()
+    
+    # add sample name 
+    
+    counts.insert(0, sample)
+    
+    with open(total_counts_path, 'a') as f_object:
+        
+        writer_object = csv.writer(f_object)
+        
+        writer_object.writerow(counts)
+        
+        f_object.close()
+    
+
+def aggregate_summary(sample, sample_summary_path, total_summary_path):
+    
+    with open(sample_summary_path, 'r') as f:
+        summary_data = json.load(f)
+        
+    # create a dic with summary data in same order 
+    
+    summary_list = [
+        sample, summary_data["n_targets"], summary_data["n_processed"],
+        summary_data["n_pseudoaligned"], summary_data["n_unique"],
+        summary_data["p_pseudoaligned"], summary_data["p_unique"]
+    ]
+    
+    with open(total_summary_path, 'a') as f_object:
+        
+        writer_object = csv.writer(f_object)
+        
+        writer_object.writerow(summary_list)
+        
+        f_object.close()
 
