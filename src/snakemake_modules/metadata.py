@@ -60,10 +60,13 @@ def get_fastq_in_dir(fastq_dir):
 
 
 
+
+
+
 if __name__ == "__main__" :
     
     
-    # for testing the fucntions 
+    # just for testing the fucntions 
     
     with open("src/TestConfigA.yaml", 'r') as stream:
         yaml_data = yaml.safe_load(stream)
@@ -76,5 +79,5 @@ if __name__ == "__main__" :
     x = get_fastq_in_dir(yaml_data["fastq_dir"])
     
     write_sample_metadata(x, out_dir)
-    
-    
+    sample_name = "SRR21711073"
+    metadata_path = "test/20221020_Celegans/output/metadata/metadata.csv"

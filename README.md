@@ -130,14 +130,37 @@ rule run_fastqc:
         
         "fastqc -o {fastqc_dir} --extract {input.fq}""
 
+```
 
 
+Lets test the fastqc rule!
 
 
+```
+snakemake -c1 -s src/Snakefile test/20221020_Celegans/output/fastqc/SRR21711077_fastqc/fastqc_data.txt
+
+```
+
+it works now for kallisto quant 
+which base command looks like
+
+```
+snakemake -c1 -s src/Snakefile test/20221020_Celegans/output/quant/SRR21711053/abundance.tsv
+
+snakemake -c1 -s src/Snakefile test/20221020_Celegans/output/quant/SRR21711077/abundance.tsv
+
+kallisto quant -i test/20221020_Celegans/output/index/Celegans.cdna.all.fa.idx -o test/20221020_Celegans/output/quant --single -l 120 -s 20 --single-overhang -t 1 data/fastq/SRR21711053.fastq.gz
 
 
 ```
 
+
+lets try the counts file 
+
+```
+snakemake -c1 -s src/Snakefile test/20221020_Celegans/output/tables/counts_summary.csv
+
+```
 
 
 

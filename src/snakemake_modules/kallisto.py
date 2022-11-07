@@ -1,6 +1,7 @@
 # a fucntion to work out the index name using the fasta file path
 
 import os 
+import pandas as pd
 
 def get_indx_name(fasta_path):
     
@@ -11,17 +12,26 @@ def get_indx_name(fasta_path):
     return(index)
 
 
-
-
-def read_length_average(fastqc_report_txt):
+def create_blank_tbls(counts_file, out_path):
     
-    file = open(fastqc_report_txt)
-  
-    # read the content of the file opened
-    length_line =  file.readlines()[8]
-    length = length_line.split()[2]
+    # a blank file with sample and gene names 
+    # to aggregate the counts 
     
-    return(int(length))
-
+    print(counts_file)
+    
+    data_import = pd.read_table(counts_file, usecols = [0])
+    genes = data_import["target_id"].to_list()
+    genes.insert(0, "sample")
+    genes_sample_tbl = pd.DataFrame([genes])
+    genes_sample_tbl.to_csv(
+        out_path + "/counts_raw.csv", index=False, header=None)
+    
+    # a blank file to place summary data 
+    summary_list = [
+        "sample", "n_targets", "n_processed", "n_pseudoaligned",
+        "n_unique", "p_pseudoaligned", "p_unique"]
+    summary_tbl = pd.DataFrame([summary_list])
+    summary_tbl.to_csv(
+        out_path + "/counts_summary.csv", index=False, header=None)
 
 
