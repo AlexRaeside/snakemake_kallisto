@@ -25,7 +25,7 @@ def output_sample_name(fastq_name):
     return(out_name)
 
 
-def write_sample_metadata(fastq_r1_list, out_dir):
+def write_sample_table(fastq_r1_list, out_dir):
     
     sample_names = [output_sample_name(i) for i in fastq_r1_list]
     
@@ -36,12 +36,12 @@ def write_sample_metadata(fastq_r1_list, out_dir):
         }
     )
     
-    out_file = os.path.join(out_dir, "metadata", "metadata.csv")
+    out_file = os.path.join(out_dir, "sample_table", "sample_table.csv")
     
     # check if metadata dir exists 
     
-    if not os.path.exists(os.path.join(out_dir, "metadata")):
-        os.mkdir(os.path.join(out_dir, "metadata"))
+    if not os.path.exists(os.path.join(out_dir, "sample_table")):
+        os.mkdir(os.path.join(out_dir, "sample_table"))
     
     sample_tbl.to_csv(out_file, index = False)
     
@@ -59,10 +59,10 @@ def get_fastq_in_dir(fastq_dir):
     return(fastq_paths)
 
 
-def get_samples(metadata_path):
+def get_samples(sample_table_path):
     
-    meta = pd.read_csv(metadata_path)
-    sample_matrix = meta[meta.columns[0]].to_numpy()
+    sample_tbl = pd.read_csv(sample_table_path)
+    sample_matrix = sample_tbl[sample_tbl.columns[0]].to_numpy()
     samples = sample_matrix.tolist()
     
     return(samples)
