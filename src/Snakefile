@@ -1,8 +1,4 @@
 
-# read in yaml
-
-
-configfile: "src/test.yaml"
 
 
 ##--- required modules ---------------------------------------------------------
@@ -10,14 +6,31 @@ configfile: "src/test.yaml"
 import snakemake_modules.kallisto as kal
 import snakemake_modules.metadata as meta
 import pandas as pd
-
+import os
 
 ##--- global vars --------------------------------------------------------------
 
+
+conda_kallisto_fastqc = "kallisto_fastqc.yml"
+
+
+
+
 fastqc_dir = config["output_dir"] + "/fastqc"
-metadata_dir = config["output_dir"] + "/metadata" 
+sample_dir = config["output_dir"] + "/sample_table" 
 quant_dir = config["output_dir"] + "/quant"
 tables_dir = config["output_dir"] + "/tables"
+metadata_dir = config["output_dir"] + "/metadata"
+log_dir = config["output_dir"] + "/log"
+
+if not os.path.exists(fastqc_dir):
+            os.mkdir(fastqc_dir)
+
+if not os.path.exists(quant_dir):
+            os.mkdir(quant_dir)
+
+if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
 
 ##---- snakemake functions -----------------------------------------------------
 # Different then the functions in the modules as snakemake functions
@@ -26,14 +39,33 @@ tables_dir = config["output_dir"] + "/tables"
 
 def fastq_path(sample_name):
     
-    # load in metadata 
-    meta = pd.read_csv(config["output_dir"] + "/metadata/metadata.csv") 
-    sample_info = meta[meta["sample_name"] == str(sample_name)]
+    """
+    Using the sample name, return the file path to the corresponding 
+    fastq file in the sample_table/sample_table.csv. Uses the sample_dir global
+    variable to find the sample table.
+    
+    
+    """
+    
+    
+    # load in sample table 
+    sample = pd.read_csv(sample_dir + "/sample_table.csv") 
+    sample_info = sample[sample["sample_name"] == str(sample_name)]
     fastq = sample_info["fastqR1_file"].loc[sample_info.index[0]]
     return(fastq)
 
 
 def get_mean_len(sample_name):
+    
+    """
+    Using the sample name, return the mean read length for the sample. The 
+    mean read lenght is located in the sample fastqc report which must be produced
+    prior to running this function. The function uses the global variable 
+    fastqc_dir to locate the sample fastqc reports. Returns the read length 
+    number as a string.
+    
+    """
+    
     
     fastqc_report = fastqc_dir + "/" + str(sample_name) + "_fastqc/fastqc_data.txt"
     
@@ -45,18 +77,28 @@ def get_mean_len(sample_name):
     return(length)
 
 
-##--- generate metadata --------------------------------------------------------
-# Since the sample names in the metadata is a key input parameter for many
-# rules. The metadata table is generated as soon as the snakemake is executed 
-# unless there is already a metadata and the config does not require a new one
+##--- generate sample table ----------------------------------------------------
+
+# Since the sample names in the sample_table is a key input parameter for many
+# rules. The sample table is generated as soon as the snakemake is executed 
+# unless there is already a sample table and the config 
+# does not state to make a new one each time the snakemake is executed
 
 
-# if there is either new metadata or there is a metadata but the config
-# says 
-
-if not os.path.exists(metadata_dir + "/metadata.csv") or config["generate_meta"] == True:
+if not os.path.exists(
+    sample_dir + "/sample_table.csv") or config["make_sample_table"] == True:
     
-    #print( "Generating metadata")
+    """
+    
+    By setting config["make_sample_table"] to false the user can add their #
+    own sample_table.csv in the sample_table folder. If the user does not state 
+    to use a prexisting the sample_table.csv then a new sample_table.csv is 
+    generated either using the list of the fastq file paths in 
+    config["fastq_R1"] or by selecting all fastq files in the directory in
+    config["fastq_dir"]
+    
+    """
+    
     
     # if the fastq files are give in config use in meta
     if len(config["fastq_R1"]) != 0:
@@ -65,48 +107,100 @@ if not os.path.exists(metadata_dir + "/metadata.csv") or config["generate_meta"]
     if len(config["fastq_R1"]) == 0:
         fq_paths =  meta.get_fastq_in_dir(config["fastq_dir"])
     # use fastq files to generate a metadata table 
-    meta.write_sample_metadata(fq_paths, config["output_dir"])
-#else:
-    #print( "Using prexisting metadata")
+    meta.write_sample_table(fq_paths, config["output_dir"])
 
 
-# from the metadata get sample names 
-# this varibale is used many rules 
 
-SAMPLES = meta.get_samples(metadata_dir + "/metadata.csv")
+# From the sample table read the list of samples of process within the 
+# snakemake. The snakemake will act on process different samples in 
+# parallel though the first sample will be processed with kallisto_quant
+# first in order the get the list and order of targets prodced  
+# to make blank tables where results from all samples can be aggregated
+
+SAMPLES = meta.get_samples(sample_dir + "/sample_table.csv")
 first_sample = SAMPLES[0]
 
-#print(first_sample)
 
 
 ##--- Snakemake rules ----------------------------------------------------------
 
 
 
+rule create_metadata:
+    """
+    Copy the metadata file in config[metadata] to the
+    metadata folder as metadata/metadata.csv. If no
+    metadata is provided then create one with just one
+    column for the sample names. The sample names must
+    always be the first column in the metadata table.
+    
+    """
+    input: 
+        metadata = config["metadata"]
+    output: 
+        metadata = metadata_dir + "/metadata.csv"
+    shell: 
+        "cp {input.metadata} {output.metadata}"
+
+
+
+
 
 rule kallisto_index:
+    """
+    Takes the path to [transcripts].fa and creates a kallisto index 
+    called [transcripts].idx which is used in pseduoalignments. Will 
+    be run once per snakemake pipeline.
+    
+    """
     input:
         fasta = config["fasta"]
     output:
         index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"])
+    conda: conda_kallisto_fastqc
+    log: log_dir + "/kallisto_index.log"
     shell:
-        "kallisto index --index={output.index} {input.fasta}"
+        "kallisto index --index={output.index} {input.fasta} > {log}"
     
     
 rule fastqc:
+    """
+    
+    When running kallisto on single-end reads, an estimate of the average 
+    read length is needed for kallisto quant. Mean read length is produced along
+    with other QC metrics by FastQC. 
+    
+    This rule uses the 'sample' wildcard which will correspond to any of 
+    the different samples in the SAMPLES variable.
+    
+    
+    """
     input: 
         fq = fastq_path,
-        metadata = metadata_dir + "/metadata.csv"
+        sample_tbl = sample_dir + "/sample_table.csv"
     output:
         fastqc_report = fastqc_dir + "/{sample}_fastqc/fastqc_data.txt"
-    run:
-        if not os.path.exists(fastqc_dir):
-            os.mkdir(fastqc_dir)
-        shell("fastqc -o {fastqc_dir} --extract {input.fq}")
+    params:
+        outpath = fastqc_dir
+    conda: conda_kallisto_fastqc
+    log: log_dir + "/fastq_{sample}.log"
+    shell: "fastqc -o {params.outpath} --extract {input.fq} > {log}"
 
 
 
 rule kallisto_quant:
+    """
+    
+    Run kallisto quant on samples, using the corresponding fastq file 
+    from the sample_table.csv, the kallsito index and mean read length
+    found in the fastQC report.
+    
+    
+    This rule uses the 'sample' wildcard which will correspond to any of 
+    the different samples in the SAMPLES variable.
+    
+    
+    """
     input:
         fq = fastq_path,
         index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"]),
@@ -119,23 +213,25 @@ rule kallisto_quant:
         thread = config["threads"],
         mean_len = get_mean_len,
         out_path = quant_dir + "/{sample}"
-    run:
-        if not os.path.exists(quant_dir):
-            os.mkdir(quant_dir)
-        # get average read length from fastqc report 
-        shell(
-            "kallisto quant -i {input.index} -o {params.out_path} --single -l {params.mean_len} -s 20  --single-overhang -t {params.thread} {input.fq}")
-        shell(
-            "touch {output.quant_done}"
-        )
+    log: log_dir + "/quant_{sample}.log"
+    conda: conda_kallisto_fastqc
+    shell:
+        """
+        kallisto quant -i {input.index} -o {params.out_path} \
+         --single -l {params.mean_len} -s 20  --single-overhang \
+        -t {params.thread} {input.fq} > {log}
+        
+        touch {output.quant_done}
+            
+        """
 
 
 rule create_blank_files:
     input:
         count_tbl = quant_dir + "/" + first_sample + "/abundance.tsv"
     output:
-        total_counts_tbl = config["output_dir"] +"/tables/counts_raw.csv",
-        total_counts_summary = config["output_dir"] +"/tables/counts_summary.csv"
+        total_counts_tbl = tables_dir +"/counts_raw.csv",
+        total_counts_summary = tables_dir +"/counts_summary.csv"
     run:
         
         if not os.path.exists(tables_dir):

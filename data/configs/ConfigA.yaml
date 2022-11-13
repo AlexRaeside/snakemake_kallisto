@@ -1,0 +1,9 @@
+run_name: "RunA_Maize"
+output_dir: "test/RunA_Maize"
+fasta: "data/transcriptomes/Zea_mays.Zm-B73-REFERENCE-NAM-5.0.cdna.all.fa.gz"
+fastq_R1: []
+threads: 1
+metadata: "data/metadata/SraRunTable_A.txt"
+fastq_dir: "data/fastq/maize"
+make_sample_table: True
+conda_dir: "conda"
