@@ -1,8 +1,4 @@
 
-# read in yaml
-
-
-configfile: "data/configs/ConfigA.yaml"
 
 
 ##--- required modules ---------------------------------------------------------
@@ -25,13 +21,17 @@ sample_dir = config["output_dir"] + "/sample_table"
 quant_dir = config["output_dir"] + "/quant"
 tables_dir = config["output_dir"] + "/tables"
 metadata_dir = config["output_dir"] + "/metadata"
+log_dir = config["output_dir"] + "/log"
 
 if not os.path.exists(fastqc_dir):
             os.mkdir(fastqc_dir)
 
 if not os.path.exists(quant_dir):
             os.mkdir(quant_dir)
-            
+
+if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
+
 ##---- snakemake functions -----------------------------------------------------
 # Different then the functions in the modules as snakemake functions
 # take one argument (the wildcard) and use global vars like the config data
@@ -139,7 +139,6 @@ rule create_metadata:
         metadata = config["metadata"]
     output: 
         metadata = metadata_dir + "/metadata.csv"
-    
     shell: 
         "cp {input.metadata} {output.metadata}"
 
@@ -159,8 +158,9 @@ rule kallisto_index:
     output:
         index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"])
     conda: conda_kallisto_fastqc
+    log: log_dir + "/kallisto_index.log"
     shell:
-        "kallisto index --index={output.index} {input.fasta}"
+        "kallisto index --index={output.index} {input.fasta} > {log}"
     
     
 rule fastqc:
@@ -183,7 +183,8 @@ rule fastqc:
     params:
         outpath = fastqc_dir
     conda: conda_kallisto_fastqc
-    shell: ("fastqc -o {params.outpath} --extract {input.fq}")
+    log: log_dir + "/fastq_{sample}.log"
+    shell: "fastqc -o {params.outpath} --extract {input.fq} > {log}"
 
 
 
@@ -212,12 +213,13 @@ rule kallisto_quant:
         thread = config["threads"],
         mean_len = get_mean_len,
         out_path = quant_dir + "/{sample}"
+    log: log_dir + "/quant_{sample}.log"
     conda: conda_kallisto_fastqc
     shell:
         """
         kallisto quant -i {input.index} -o {params.out_path} \
          --single -l {params.mean_len} -s 20  --single-overhang \
-        -t {params.thread} {input.fq}
+        -t {params.thread} {input.fq} > {log}
         
         touch {output.quant_done}
             
