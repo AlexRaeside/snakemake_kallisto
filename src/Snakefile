@@ -2,7 +2,7 @@
 # read in yaml
 
 
-configfile: "src/test.yaml"
+configfile: "data/configs/ConfigA.yaml"
 
 
 ##--- required modules ---------------------------------------------------------
@@ -10,9 +10,15 @@ configfile: "src/test.yaml"
 import snakemake_modules.kallisto as kal
 import snakemake_modules.metadata as meta
 import pandas as pd
-
+import os
 
 ##--- global vars --------------------------------------------------------------
+
+
+conda_kallisto_fastqc = "kallisto_fastqc.yml"
+
+
+
 
 fastqc_dir = config["output_dir"] + "/fastqc"
 sample_dir = config["output_dir"] + "/sample_table" 
@@ -20,6 +26,12 @@ quant_dir = config["output_dir"] + "/quant"
 tables_dir = config["output_dir"] + "/tables"
 metadata_dir = config["output_dir"] + "/metadata"
 
+if not os.path.exists(fastqc_dir):
+            os.mkdir(fastqc_dir)
+
+if not os.path.exists(quant_dir):
+            os.mkdir(quant_dir)
+            
 ##---- snakemake functions -----------------------------------------------------
 # Different then the functions in the modules as snakemake functions
 # take one argument (the wildcard) and use global vars like the config data
@@ -146,6 +158,7 @@ rule kallisto_index:
         fasta = config["fasta"]
     output:
         index = config["output_dir"] + "/index/" + kal.get_indx_name(config["fasta"])
+    conda: conda_kallisto_fastqc
     shell:
         "kallisto index --index={output.index} {input.fasta}"
     
@@ -167,10 +180,10 @@ rule fastqc:
         sample_tbl = sample_dir + "/sample_table.csv"
     output:
         fastqc_report = fastqc_dir + "/{sample}_fastqc/fastqc_data.txt"
-    run:
-        if not os.path.exists(fastqc_dir):
-            os.mkdir(fastqc_dir)
-        shell("fastqc -o {fastqc_dir} --extract {input.fq}")
+    params:
+        outpath = fastqc_dir
+    conda: conda_kallisto_fastqc
+    shell: ("fastqc -o {params.outpath} --extract {input.fq}")
 
 
 
@@ -199,17 +212,16 @@ rule kallisto_quant:
         thread = config["threads"],
         mean_len = get_mean_len,
         out_path = quant_dir + "/{sample}"
-    run:
-        if not os.path.exists(quant_dir):
-            os.mkdir(quant_dir)
-        # get average read length from fastqc report 
-        shell(
-            "kallisto quant -i {input.index} -o {params.out_path}"
-            " --single -l {params.mean_len} -s 20  --single-overhang "
-            "-t {params.thread} {input.fq}")
-        shell(
-            "touch {output.quant_done}"
-        )
+    conda: conda_kallisto_fastqc
+    shell:
+        """
+        kallisto quant -i {input.index} -o {params.out_path} \
+         --single -l {params.mean_len} -s 20  --single-overhang \
+        -t {params.thread} {input.fq}
+        
+        touch {output.quant_done}
+            
+        """
 
 
 rule create_blank_files:
