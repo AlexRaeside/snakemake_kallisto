@@ -68,6 +68,22 @@ def get_samples(sample_table_path):
     return(samples)
 
 
+def move_metadata(metadata_path, col_list):
+    
+    # load metadata tbl csv, take the cols wanted and 
+    # return the pandas df
+    
+    meta = pd.read_csv(metadata_path)
+    
+    if len(col_list) == 0:
+        meta_sub = meta
+    
+    if len(col_list) != 0:
+        meta_sub = meta[meta.columns.intersection(col_list)]
+        
+    return meta_sub
+
+
 
 
 if __name__ == "__main__" :

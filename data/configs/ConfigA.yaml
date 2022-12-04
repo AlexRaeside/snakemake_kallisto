@@ -4,6 +4,10 @@ fasta: "data/transcriptomes/Zea_mays.Zm-B73-REFERENCE-NAM-5.0.cdna.all.fa.gz"
 fastq_R1: []
 threads: 1
 metadata: "data/metadata/SraRunTable_A.txt"
+metadata_keep_cols: [
+    "Run", "BioProject", "BioSample", "Experiment",
+    "Organism", "Sample Name", "GENOTYPE"] # keep blank [] for all cols
+metadata_sample_col: "Run"
+metadata_experiment_col: "GENOTYPE"
 fastq_dir: "data/fastq/maize"
 make_sample_table: True
-conda_dir: "conda"
