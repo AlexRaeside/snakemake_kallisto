@@ -136,9 +136,15 @@ conda install -c r r-essentials
 
 """
 
+### 2022_12_05
+
+PCA works fine but a column (sample) is missing from the counts 
+files. The counts files missed ERR6484003. This problem occurs in vst filtering.
+Copy and paste problem in both cpm and vst filtering.
 
 
-### 2022_11_26
+
+### 2022_12_04
 
 Neither the aggregate counts or transpose counts rules can be run with 
 multiple cores as they both include writing to the same file. The cores
@@ -146,7 +152,14 @@ that these rules run on can be limited using resources: writing_threads=1
 
 For the filtering it might be best to have it multithreaded with the pool
 command writing each batch into a separate dir with like tmp_filter25
-with a file name filtered_155_246.csv
+with a file name filtered_155_246.csv.
+
+New problem. The headers on the counts are fine but the 
+counts seem to repeat with 36 cols. The 8 samples are repeated 9 times. 
+The problem was caused be me running the snakemake 9 times with 
+each repeat adding another 8 rows to tmp_counts_raw.csv.
+
+Rscripts for vst and cpm work fine in R conda env
 
 ### 2022_11_16
 

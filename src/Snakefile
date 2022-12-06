@@ -11,14 +11,21 @@ import os
 ##--- common vars --------------------------------------------------------------
 
 
+# conda yaml files placed in the same directory as the snakefile
+# used to create virutal enviroments to run shell and R parts 
+# of the pipeline
+
+env_kallisto_fastqc = "kallisto_fastqc_conda.yml"
+env_rscripts = "rscipt_conda.yml"
+
+
+
+
+
 # Some variables are used repeatly in the snakemake
 # so are stated at the beginning of the pipeline
 # this are mostly path strings of the different directories
 # snakemake will be writing the output too
-
-conda_kallisto_fastqc = "kallisto_fastqc_conda.yml"
-conda_rscripts = "rscipt_conda.yml"
-
 
 
 fastqc_dir = config["output_dir"] + "/fastqc"
@@ -29,6 +36,7 @@ metadata_dir = config["output_dir"] + "/metadata"
 log_dir = config["output_dir"] + "/log"
 figures_dir = config["output_dir"] + "/figures"
 done_dir = config["output_dir"] + "/done"
+plotly_dir = config["output_dir"] + "/plotly_wedgits"
 
 if not os.path.exists(fastqc_dir):
             os.mkdir(fastqc_dir)
@@ -42,6 +50,8 @@ if not os.path.exists(log_dir):
 if not os.path.exists(figures_dir):
             os.mkdir(figures_dir)
 
+if not os.path.exists(plotly_dir):
+            os.mkdir(plotly_dir)
 
 
 
@@ -146,15 +156,12 @@ rule move_metadata:
 
     """
     input:
-        metadata = config["metadata"],
-        keep_cols = config["metadata_keep_cols"]
-
+        metadata = config["metadata"]
     output:
         metadata = metadata_dir + "/metadata.csv"
     run:
         meta_tbl = meta.move_metadata(
-            input.metadata, input.keep_cols)
-
+            input.metadata, config["metadata_keep_cols"])
         meta_tbl.to_csv(output.metadata, index = False)
 
 
@@ -173,7 +180,7 @@ rule kallisto_index:
     output:
         index = config["output_dir"] + "/index/" + kal.get_indx_name(
             config["fasta"])
-    conda: conda_kallisto_fastqc
+    conda: env_kallisto_fastqc
     log: log_dir + "/kallisto_index.log"
     shell:
         "kallisto index --index={output.index} {input.fasta} > {log}"
@@ -198,7 +205,7 @@ rule fastqc:
         fastqc_report = fastqc_dir + "/{sample}_fastqc/fastqc_data.txt"
     params:
         outpath = fastqc_dir
-    conda: conda_kallisto_fastqc
+    conda: env_kallisto_fastqc
     log: log_dir + "/fastq_{sample}.log"
     shell: "fastqc -o {params.outpath} --extract {input.fq} > {log}"
 
@@ -233,15 +240,14 @@ rule kallisto_quant:
         mean_len = get_mean_len,
         out_path = quant_dir + "/{sample}"
     log: log_dir + "/quant_{sample}.log"
-    conda: conda_kallisto_fastqc
+    conda: env_kallisto_fastqc
     shell:
         """
         kallisto quant -i {input.index} -o {params.out_path} \
          --single -l {params.mean_len} -s 20  --single-overhang \
         -t {params.thread} {input.fq} > {log}
-
+        
         touch {output.quant_done}
-
         """
 
 
@@ -252,11 +258,8 @@ rule create_tmp_and_summary_files:
     of target id counts. The tmp_counts_raw.csv has samples as rows and
     target ids as columns, whereas the counts_raw.csv will be transposed
     with samples as cols and targets as rows.
-
     The counts_summary.csv is a csv file with headers for each of the
     key pseduoalignment stats found in
-
-
     """
     input:
         count_tbl = quant_dir + "/" + first_sample + "/abundance.tsv"
@@ -264,10 +267,8 @@ rule create_tmp_and_summary_files:
         total_counts_tbl = tables_dir +"/tmp_counts_raw.csv",
         total_counts_summary = tables_dir +"/counts_summary.csv"
     run:
-
         if not os.path.exists(tables_dir):
             os.mkdir(tables_dir)
-
         kal.create_blank_tbls(input.count_tbl , tables_dir)
 
 
@@ -297,14 +298,10 @@ rule aggregate_tmp_counts:
     params:
         sample_name = "{sample}"
     run:
-
         kal.aggregate_counts(
             params.sample_name, input.sample_counts, input.total_counts_tbl)
-
         kal.aggregate_summary(
             params.sample_name, input.sample_summary, input.total_counts_summary)
-
-
         shell(
             "touch {output.move_done}"
         )
@@ -328,9 +325,7 @@ rule transpose_and_filter_counts:
 
     params:
         tables_dir = tables_dir
-
     run:
-
         kal.transpose_and_filter(
             SAMPLES, tables_dir, config["threads"])
 
@@ -338,8 +333,6 @@ rule transpose_and_filter_counts:
             "touch {output.filter_done}"
         )
 
-        print("here")
-        print(tables_dir + "/counts_filtered_medi200.csv")
 
 rule aggregate_counts:
     """
@@ -375,9 +368,10 @@ rule CPM_normalize:
     This is the first rule which invokes a Rscipt. This is made much easier
     by the fact that the snakemake Script directory is run relative the
     snakefile not the users current working directory.
-
-
-
+    
+    Rule not run in final version as Rsciprt needs some bug fixes and the CPM
+    is only relevent if this was amplicon based seqeucing data not 
+    regualr rna-seq. Intreasting to compare to VST but not needed.
     """
     input:
         filter_aggregate_done = config["output_dir"] +"/done/filter_aggregate.done",
@@ -392,17 +386,18 @@ rule CPM_normalize:
 
 rule VST_normalize:
     """
-    Same as the CPM rule but uses VST normalization
+    Same as the CPM rule but uses VST normalization. More appropirate to 
+    use VST in a PCA analysis. 
 
     """
     input:
         filter_aggregate_done = config["output_dir"] +"/done/filter_aggregate.done",
         filtered_counts_file = expand(
-            "{tables}/counts_filtered_medi{threshold}.csv",
+            "{tables}/counts_filtered_medi{th}.csv",
             tables = tables_dir,
-            threshold = ["25", "50", "100", "200"])
+            th = ["25", "50", "100", "200"])
     output:
-        vst_counts_file = tables_dir + "/vst_counts_filtered_medi{filter}.csv"
+        vst_counts_file = tables_dir + "/vst_counts_filtered_medi{th}.csv"
 
 
 
@@ -410,8 +405,8 @@ rule VST_normalize:
 
 rule alignment_summary_figures:
     """
-
-
+    Produces a figure and plotly wedgit with pseduoalignment 
+    summary stats
     """
     input:
         stats_moved = expand(
@@ -421,6 +416,9 @@ rule alignment_summary_figures:
     output:
         alignment_png = figures_dir + "/pseudoalignment_summary.svg",
         alignment_svg = figures_dir + "/pseduoalignment_summary.png"
+    conda: env_rscripts
+    params: out = config["output_dir"]
+    script: "Rscripts/pseduoalignment_figures.R --out {params.out}"
 
 
 
@@ -431,37 +429,30 @@ rule VST_PCA:
 
     """
     input:
-        vst_counts_file = tables_dir + "/vst_counts_filtered_medi100.csv"
+        vst_counts_file = tables_dir + "/vst_counts_filtered_medi200.csv",
+        metadata_tbl = metadata_dir + "/metadata.csv"
     output:
-        vst_pca_png = figures_dir + "/vst_pca.png"
+        vst_pca_png = figures_dir + "/pca_vst_counts_filtered_medi200.png"
+    conda: env_rscripts
+    params: 
+        out = config["output_dir"],
+        counts = tables_dir + "/vst_counts_filtered_medi200.csv",
+        meta = metadata_dir + "/metadata.csv",
+        sample_col = config["metadata_sample_col"],
+        exp_col = config["metadata_experiment_col"]
+    script: "Rscripts/pca_analysis.R -c {params.counts} -o {params.out} -m {params.meta} -s {params.sample_col} -e {exp_col}"
 
 
-rule CPM_PCA:
-    """
-    After the counts files are filtered create a PCA.
-    For now just run this on counts_filtered_medi100.csv
-
-    """
-    input:
-        vst_counts_file = tables_dir + "/cpm_counts_filtered_medi100.csv"
-    output:
-        vst_pca_png = figures_dir + "/cpm_pca.png"
-    # conda: conda_rscripts
-
-
-
-
-
-rule build_report:
+rule figures_made:
     """"
     Remove all tmp_ files and directories
-    Place /figrues, /tables in a new directory [run_name]_results/
+    Place following firectories in a new directory [run_name]_results/
+    
     write config into [run_name]_results/
 
     """
     input:
         alignment_png = figures_dir + "/pseudoalignment_summary.svg",
-        vst_pca_png = figures_dir + "/vst_pca.png",
-        cpm_pca_png = figures_dir + "/cpm_pca.png"
+        vst_pca_png = figures_dir + "/pca_vst_counts_filtered_medi200.png"
     output:
-        tidy_done = done_dir + "/tidy_up.done"
+        tidy_done = done_dir + "/figures_made.done"

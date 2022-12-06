@@ -21,8 +21,8 @@ require(argparser)
 p <- arg_parser("Create pseduoalignment summary figures")
 p <- add_argument(
     p, 
-    "working_dir",
-    help="path to the output folder with figures/ and plotly/ folders")
+    "--path",
+    help="path to the output folder with figures, plotly and tables folders")
 
 argv <- parse_args(p)
 
