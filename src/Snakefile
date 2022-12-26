@@ -507,7 +507,8 @@ rule tidy_up_tmp_files:
 
 rule complete_run:
     input:
-        res_config = results_dir + "/config.yaml"
+        res_config = results_dir + "/config.yaml",
+        tidy_up = done_dir + "/tidy.done"
     output:
         config["output_dir"] + "/done/run.done"
     shell:
@@ -515,4 +516,14 @@ rule complete_run:
         touch {output}
         
         """
+
+rule make_art:
+    input:
+        config["output_dir"] + "/done/run.done"
+    output:
+        art_done = done_dir + "/art.done"
+    params:
+        results_dir = results_dir
+    conda: env_rscripts
+    script: "Rscripts/generate_art.R"
 
