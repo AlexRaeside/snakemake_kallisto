@@ -186,6 +186,5 @@ ggsave("title_art.svg", plot = art_w_title, device = "svg", path = art_path)
 ##---------- Write done file ---------------------------------------------------
 
 done_file <- snakemake@output["art_done"][[1]]
-print(done_file)
 file.create(done_file)
 

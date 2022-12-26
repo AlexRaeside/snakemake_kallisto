@@ -1,0 +1,13 @@
+run_name: "Test_Rat"
+output_dir: "test/exampleB"
+fasta: "data/transcriptomes/Rattus_norvegicus.mRatBN7.2.cdna.all.fa.gz"
+fastq_R1: []
+threads: 1
+metadata: "data/metadata/SraRunTable_B.txt"
+metadata_keep_cols: [
+    "Run", "BioProject", "BioSample", "Experiment",
+    "Organism", "Sample Name", "Treatment"] # keep blank [] for all cols
+metadata_sample_col: "Run"
+metadata_experiment_col: "Treatment"
+fastq_dir: "data/fastq/rat"
+make_sample_table: True

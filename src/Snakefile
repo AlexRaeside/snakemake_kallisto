@@ -39,7 +39,7 @@ figures_dir = config["output_dir"] + "/figures"
 done_dir = config["output_dir"] + "/done"
 plotly_dir = config["output_dir"] + "/plotly_widgets"
 results_dir = config["output_dir"] + "/" + config["run_name"] + "_results"
-
+index_dir = config["output_dir"] + "/index"
 
 if not os.path.exists(fastqc_dir):
     os.mkdir(fastqc_dir)
@@ -61,6 +61,11 @@ if not os.path.exists(results_dir):
 
 if not os.path.exists(plotly_dir):
     os.mkdir(plotly_dir)
+
+if not os.path.exists(index_dir):
+    os.mkdir(index_dir)
+
+
 
 ##---- snakemake functions -----------------------------------------------------
 # Different then the functions in the modules as snakemake functions

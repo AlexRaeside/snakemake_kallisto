@@ -1,5 +1,5 @@
-run_name: "RunA_Maize"
-output_dir: "test/RunA_Maize"
+run_name: "Test_Maize"
+output_dir: "test/exampleA"
 fasta: "data/transcriptomes/Zea_mays.Zm-B73-REFERENCE-NAM-5.0.cdna.all.fa.gz"
 fastq_R1: []
 threads: 1

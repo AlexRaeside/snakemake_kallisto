@@ -98,14 +98,27 @@ activate snakemake_env
 # run the snakemake to make a dag figure 
 snakemake -c1 -s src/Snakefile \
 --configfile data/configs/ConfigA.yaml \
---dag test/RunA_Maize/done/run.done | dot -Tsvg > \
-figures/dag.svg
+--dag test/RunA_Maize/done/art.done | dot -Tsvg > \
+figures/maize_dag.svg
 
 # run the snakemake for reals 
 snakemake -c1 -s src/Snakefile --configfile data/configs/ConfigA.yaml test/RunA_Maize/done/run.done 
 
 # the config gets confused with the line
 snakemake -c1 --configfile data/configs/ConfigA.yaml -s src/Snakefile test/RunA_Maize/run_complete.txt
+
+# for rat 
+
+snakemake -c1 -s src/Snakefile \
+--configfile data/configs/ConfigB.yaml \
+--dag test/RunB_Rat/done/art.done | dot -Tsvg > \
+figures/rat_dag.svg
+
+snakemake -s src/Snakefile \
+--configfile data/configs/ConfigB.yaml \
+-c1 test/RunB_Rat/done/art.done 
+
+
 
 
 ```
