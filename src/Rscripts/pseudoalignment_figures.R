@@ -16,17 +16,11 @@ require(svglite)
 require(htmlwidgets)
 require(argparser)
 
-##--- argsparse ----------------------------------------------------------------
+##--- snakemake input -----------------------------------------------------------
 
-p <- arg_parser("Create pseduoalignment summary figures")
-p <- add_argument(
-    p, 
-    "--path",
-    help="path to the output folder with figures, plotly and tables folders")
 
-argv <- parse_args(p)
 
-work_dir <- argv$working_dir
+work_dir <- snakemake@params[['out']]
 
 ##------- Loading tables -------------------------------------------------------
 

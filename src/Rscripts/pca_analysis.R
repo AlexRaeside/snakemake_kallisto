@@ -26,28 +26,11 @@ require(argparser)
 
 ###------ handle input ---------------------------------------------------------
 
-
-p <- arg_parser("Create PCA figures")
-p <- add_argument(
-    p, 
-    "--counts",
-    help="path to counts table")
-p <- add_argument(
-    p, 
-    "--out",
-    help="output directory to write figures too")
-p <- add_argument(
-    p, 
-    "--meta",
-    help="path to metatable")
-p <- add_argument(
-    p, 
-    "--sample_col",
-    help="Name of col in metatable with sample names")
-p <- add_argument(
-    p, 
-    "--exp_col",
-    help="Name of col in metatable with experimental variable")
+counts_file <- snakemake@parmas["counts"]
+metadata_file <-snakemake@params["meta"]
+out <- snakemake@params["out"]
+sample_col <- snakemake@params["sample_col"]
+exp_col <- snakemake@params["exp_col"]
 
 
 ### ----- PCA analysis ---------------------------------------------------------
@@ -86,14 +69,14 @@ pc_scores <- sample_pca$x %>%
 
 # add the experimental variable to pc_scores 
 
-pc_scores <- merge(pc_scores, meta_tbl, by.x = "sample", by.y = samples_col)
+pc_scores <- merge(pc_scores, meta_tbl, by.x = "sample", by.y = sample_col)
 
 
 # create tooltip text 
 # with Sample name, experimental value and 
 
 tooltip_tbl <- pc_scores %>%
-    dplyr::select(PC1, PC2, sample, !!sym(experiment_col))
+    dplyr::select(PC1, PC2, sample, !!sym(exp_col))
 
 tooltip_tbl$PC1 <- paste0("PC1: ", tooltip_tbl$PC1)
 tooltip_tbl$PC2 <- paste0("PC2: ", tooltip_tbl$PC2)
@@ -114,7 +97,7 @@ gg_pc_scores <- pc_scores %>%
         aes(
             x = PC1, 
             y = PC2, 
-            colour = !!sym(experiment_col),
+            colour = !!sym(exp_col),
             text = tooltip)) +
     geom_point() +
     xlab(pc1_stat) +
@@ -145,9 +128,9 @@ ggsave(
     device = "svg")
 
 
-# write the widget to wedgits folder 
+# write the widget to widgets folder 
 
-html_file <- paste0(out_dir, "/plotly_wedgits/", basename, ".html")
+html_file <- paste0(out_dir, "/plotly_widgets/", basename, ".html")
 
 saveWidget(
     plotly_pca,

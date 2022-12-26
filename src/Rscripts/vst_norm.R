@@ -8,28 +8,16 @@
 
 require(DESeq2, quietly = TRUE)
 require(dplyr, quietly = TRUE)
-require(argparser, quietly = TRUE)
 require(readr, quietly = TRUE)
 require(tibble, quietly = TRUE)
 
-###----- args parse  -----------------------------------------------------------
+###----- snakemake inputs   ----------------------------------------------------
 
-p <- arg_parser("VST normalization")
-p <- add_argument(
-    p, 
-    "--counts",
-    help="path to raw counts table")
-p <- add_argument(
-    p, 
-    "--out",
-    help="output directory to write the cpm counts too")
+# counts file 
+counts_file <- snakemake@input[["filtered_counts_file"]]
 
-
-argv <- parse_args(p)
-
-counts_file <- argv$counts
-out_dir <- argv$out
-
+# tables directory to write the resulting file 
+out_dir <- snakemake@input[["out_dir"]]
 
 # test file 
 

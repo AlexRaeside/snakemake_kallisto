@@ -20,8 +20,6 @@ def create_blank_tbls(counts_file, out_path):
     # a blank file with sample and gene names
     # to aggregate the counts
 
-    print(counts_file)
-
     data_import = pd.read_table(counts_file, usecols = [0])
     genes = data_import["target_id"].to_list()
     genes.insert(0, "sample")
@@ -166,12 +164,8 @@ def create_blanks(samples, tables_dir):
 
     samples.insert(0, "target")
 
-    print(samples)
-
     blank_table = pd.DataFrame(columns = samples)
 
-    print("here")
-    print(blank_table)
 
     for n in (0, 25, 50, 100, 200):
 

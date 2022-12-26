@@ -1,4 +1,4 @@
-
+# Snakemake file for rules 
 
 
 ##--- required modules ---------------------------------------------------------
@@ -7,20 +7,24 @@ import snakemake_modules.kallisto as kal
 import snakemake_modules.metadata as meta
 import pandas as pd
 import os
+import datetime
+import yaml
 
 ##--- common vars --------------------------------------------------------------
 
 
 # conda yaml files placed in the same directory as the snakefile
-# used to create virutal enviroments to run shell and R parts 
+# used to create virutal enviroments to run shell and R parts
 # of the pipeline
 
 env_kallisto_fastqc = "kallisto_fastqc_conda.yml"
-env_rscripts = "rscipt_conda.yml"
+env_rscripts = "rscripts_conda.yml"
 
 
+# set time were the pipeline beginnings 
+# write out later into the config file 
 
-
+start_time = datetime.datetime.now()
 
 # Some variables are used repeatly in the snakemake
 # so are stated at the beginning of the pipeline
@@ -36,24 +40,30 @@ metadata_dir = config["output_dir"] + "/metadata"
 log_dir = config["output_dir"] + "/log"
 figures_dir = config["output_dir"] + "/figures"
 done_dir = config["output_dir"] + "/done"
-plotly_dir = config["output_dir"] + "/plotly_wedgits"
+plotly_dir = config["output_dir"] + "/plotly_widgets"
+results_dir = config["output_dir"] + "/" + config["run_name"] + "_results"
+
 
 if not os.path.exists(fastqc_dir):
-            os.mkdir(fastqc_dir)
+    os.mkdir(fastqc_dir)
 
 if not os.path.exists(quant_dir):
-            os.mkdir(quant_dir)
+    os.mkdir(quant_dir)
 
 if not os.path.exists(log_dir):
-            os.mkdir(log_dir)
+    os.mkdir(log_dir)
 
 if not os.path.exists(figures_dir):
-            os.mkdir(figures_dir)
+    os.mkdir(figures_dir)
 
 if not os.path.exists(plotly_dir):
-            os.mkdir(plotly_dir)
+    os.mkdir(plotly_dir)
 
+if not os.path.exists(results_dir):
+    os.mkdir(results_dir)
 
+if not os.path.exists(plotly_dir):
+    os.mkdir(plotly_dir)
 
 ##---- snakemake functions -----------------------------------------------------
 # Different then the functions in the modules as snakemake functions
@@ -61,13 +71,10 @@ if not os.path.exists(plotly_dir):
 
 
 def fastq_path(sample_name):
-
     """
     Using the sample name, return the file path to the corresponding
     fastq file in the sample_table/sample_table.csv. Uses the sample_dir global
     variable to find the sample table.
-
-
     """
 
 
@@ -79,16 +86,13 @@ def fastq_path(sample_name):
 
 
 def get_mean_len(sample_name):
-
     """
     Using the sample name, return the mean read length for the sample. The
     mean read length is located in the sample fastqc report which must be produced
     prior to running this function. The function uses the global variable
     fastqc_dir to locate the sample fastqc reports. Returns the read length
     number as a string.
-
     """
-
 
     fastqc_report = fastqc_dir + "/" + str(sample_name) + "_fastqc/fastqc_data.txt"
 
@@ -112,14 +116,12 @@ if not os.path.exists(
     sample_dir + "/sample_table.csv") or config["make_sample_table"] == True:
 
     """
-
     By setting config["make_sample_table"] to false the user can add their #
     own sample_table.csv in the sample_table folder. If the user does not state
     to use a preexisting the sample_table.csv then a new sample_table.csv is
     generated either using the list of the fastq file paths in
     config["fastq_R1"] or by selecting all fastq files in the directory in
     config["fastq_dir"]
-
     """
 
 
@@ -153,7 +155,6 @@ rule move_metadata:
     """
     Copy the metadata file from the path in the config
     to /metadata folder. Filtering to just the cols in the
-
     """
     input:
         metadata = config["metadata"]
@@ -173,7 +174,6 @@ rule kallisto_index:
     Takes the path to [transcripts].fa and creates a kallisto index
     called [transcripts].idx which is used in pseduoalignments. Will
     be run once per snakemake pipeline.
-
     """
     input:
         fasta = config["fasta"]
@@ -188,15 +188,11 @@ rule kallisto_index:
 
 rule fastqc:
     """
-
     When running kallisto on single-end reads, an estimate of the average
     read length is needed for kallisto quant. Mean read length is produced along
     with other QC metrics by FastQC.
-
     This rule uses the 'sample' wildcard which will correspond to any of
     the different samples in the SAMPLES variable.
-
-
     """
     input:
         fq = fastq_path,
@@ -213,18 +209,15 @@ rule fastqc:
 
 rule kallisto_quant:
     """
-
+    
     Run kallisto quant on samples, using the corresponding fastq file
     from the sample_table.csv, the kallisto index and mean read length
     found in the fastQC report.
-
     This rule uses the 'sample' wildcard which will correspond to any of
     the different samples in the SAMPLES variable.
-
     Though it is the lighest RNA-Seq processing program to run there is still
     lots if intereasting stuff going on.
-
-
+    
     """
     input:
         fq = fastq_path,
@@ -284,6 +277,9 @@ rule aggregate_tmp_counts:
     This rule contains the directory resources in order
     to prevent multithreading at this point as that would lead
     to multiple
+    
+    This needs to be replaced so it clearly loops through samples 
+    instead of needed to be set at rescources one.
 
 
     """
@@ -306,14 +302,12 @@ rule aggregate_tmp_counts:
             "touch {output.move_done}"
         )
 
-
-
 rule transpose_and_filter_counts:
     """
     Once all counts have been removed. The tmp counts table is loaded, transposed and
     written as counts_raw.csv. As the counts raw is created in this rule it is used as
     input for other rules.
-
+    
     """
     input:
         move_done = expand(
@@ -322,21 +316,20 @@ rule transpose_and_filter_counts:
         tmp_counts = tables_dir + "/tmp_counts_raw.csv"
     output:
         filter_done = config["output_dir"] +"/done/counts_filtered.done"
-
     params:
         tables_dir = tables_dir
     run:
         kal.transpose_and_filter(
             SAMPLES, tables_dir, config["threads"])
-
+            
         shell(
             "touch {output.filter_done}"
         )
 
-
 rule aggregate_counts:
     """
-
+    Some notes 
+    
     """
     input:
         filter_done = config["output_dir"] +"/done/counts_filtered.done"
@@ -356,38 +349,13 @@ rule aggregate_counts:
         cat {params.tables_dir}/tmp_50/*.csv >> {params.tables_dir}/counts_filtered_medi50.csv
         cat {params.tables_dir}/tmp_100/*.csv >> {params.tables_dir}/counts_filtered_medi100.csv
         cat {params.tables_dir}/tmp_200/*.csv >> {params.tables_dir}/counts_filtered_medi200.csv
-
         touch {output.filter_aggregate_done}
-
-
         """
-
-
-rule CPM_normalize:
-    """
-    This is the first rule which invokes a Rscipt. This is made much easier
-    by the fact that the snakemake Script directory is run relative the
-    snakefile not the users current working directory.
-    
-    Rule not run in final version as Rsciprt needs some bug fixes and the CPM
-    is only relevent if this was amplicon based seqeucing data not 
-    regualr rna-seq. Intreasting to compare to VST but not needed.
-    """
-    input:
-        filter_aggregate_done = config["output_dir"] +"/done/filter_aggregate.done",
-        filtered_counts_file = expand(
-            "{tables}/counts_filtered_medi{ft}.csv",
-            tables = tables_dir,
-            ft = ["25", "50", "100", "200"])
-    output:
-        cpm_counts_file = tables_dir + "/cpm_counts_filtered_medi{ft}.csv"
-
-
 
 rule VST_normalize:
     """
-    Same as the CPM rule but uses VST normalization. More appropirate to 
-    use VST in a PCA analysis. 
+    Same as the CPM rule but uses VST normalization. More appropirate to
+    use VST in a PCA analysis.
 
     """
     input:
@@ -396,31 +364,31 @@ rule VST_normalize:
             "{tables}/counts_filtered_medi{th}.csv",
             tables = tables_dir,
             th = ["25", "50", "100", "200"])
+    params: 
+        out_dir = tables_dir
     output:
         vst_counts_file = tables_dir + "/vst_counts_filtered_medi{th}.csv"
-
-
-
+    script: "Rscripts/pseudoalignment_figures.R"
 
 
 rule alignment_summary_figures:
     """
-    Produces a figure and plotly wedgit with pseduoalignment 
+    Produces a figure and plotly wedgit with pseduoalignment
     summary stats
     """
     input:
         stats_moved = expand(
             "{out}/done/counts_moved_{sample_id}.done",
             out = config["output_dir"], sample_id = SAMPLES),
-        stats_summary_file = tables_dir + "/counts_summary.csv"
+        filter_aggregate_done = config["output_dir"] +"/done/filter_aggregate.done",
+        stats_summary_file = tables_dir + "/counts_summary.csv",
     output:
-        alignment_png = figures_dir + "/pseudoalignment_summary.svg",
-        alignment_svg = figures_dir + "/pseduoalignment_summary.png"
+        alignment_png = figures_dir + "/pseudoalignment_summary.png"
     conda: env_rscripts
-    params: out = config["output_dir"]
-    script: "Rscripts/pseduoalignment_figures.R --out {params.out}"
-
-
+    params: 
+        out = config["output_dir"]
+    script: 
+        "Rscripts/pseudoalignment_figures.R"
 
 rule VST_PCA:
     """
@@ -434,25 +402,112 @@ rule VST_PCA:
     output:
         vst_pca_png = figures_dir + "/pca_vst_counts_filtered_medi200.png"
     conda: env_rscripts
-    params: 
+    params:
         out = config["output_dir"],
         counts = tables_dir + "/vst_counts_filtered_medi200.csv",
         meta = metadata_dir + "/metadata.csv",
         sample_col = config["metadata_sample_col"],
         exp_col = config["metadata_experiment_col"]
-    script: "Rscripts/pca_analysis.R -c {params.counts} -o {params.out} -m {params.meta} -s {params.sample_col} -e {exp_col}"
+    script:
+        "Rscripts/pca_analysis.R"
 
-
-rule figures_made:
+rule move_final_files:
     """"
-    Remove all tmp_ files and directories
-    Place following firectories in a new directory [run_name]_results/
-    
-    write config into [run_name]_results/
-
+    Add files and figures to a results directory which
+    can be zipped up and exported elsewhere 
     """
     input:
-        alignment_png = figures_dir + "/pseudoalignment_summary.svg",
-        vst_pca_png = figures_dir + "/pca_vst_counts_filtered_medi200.png"
+        alignment_png = figures_dir + "/pseudoalignment_summary.png",
+        vst_pca_png = figures_dir + "/pca_vst_counts_filtered_medi200.png",
+        counts_summary = tables_dir + "/counts_summary.csv",
+        counts_raw = tables_dir + "/counts_raw.csv", 
+        metadata = metadata_dir + "/metadata.csv"
     output:
-        tidy_done = done_dir + "/figures_made.done"
+        done = done_dir + "/files_move.done"
+    params:
+        res_dir = results_dir,
+        tbl_dir = tables_dir,
+        fig_dir = figures_dir,
+        meta_dir = metadata_dir,
+        plot_dir = plotly_dir
+    shell:
+        """
+        # move metadata
+        cp {params.meta_dir}/metadata.csv {params.res_dir}/.
+        
+        # move counts_* tbls 
+        cp {params.tbl_dir}/counts_*.csv {params.res_dir}/.
+        
+        # move figures 
+        mkdir figures
+        cp {params.fig_dir}/* {params.res_dir}/figures/.
+        
+        # move plotly_wedgits
+        mkdir {params.res_dir}/plotly_wedgits
+        cp -r {params.plot_dir}/*  {params.res_dir}/plotly_wedgits/.
+        
+        touch {output.done}
+        
+        """
+rule write_config:
+    """
+    Python code 
+    To write the config file into the 
+    results directory. Also write the start and stop times 
+    for the run
+    
+    """
+    input:
+        files_moved = done_dir + "/files_move.done"
+    output:
+        res_config = results_dir + "/config.yaml"
+    run:
+        
+        summary_stats = pd.read_csv(tables_dir + "/counts_summary.csv")
+        
+        new_config = {
+            "run_name" : config["run_name"],
+            "fasta" : config["fasta"],
+            "metadata" : cnofig["metadata_experiment_col"],
+            "n_samples": len(summary_stats.index),
+            "total_reads_n" : sum(summary_stats["n_processed"]),
+            "total_pseduoaligned_n" : sum(summary_stats["n_pseudoaligned"]) ,
+            "total_pseduoaligned_p" : round(
+                sum(
+                    summary_stats["n_pseudoaligned"]) / sum(
+                        summary_stats["n_processed"])),
+            "run_start_time": str(start_time),
+            "run_end_time": str(datetime.datetime.now())
+            }
+        
+        # write out new config file into the 
+        
+        new_config_file = results_dir + "/config.yaml"
+        
+        with open(new_config_file, "w") as fh:
+            yaml.dump(new_config, fh)
+
+rule tidy_up_tmp_files:
+    input: 
+        res_config = results_dir + "/config.yaml"
+    output: 
+        tidy_up = done_dir + "/tidy.done"
+    params: 
+        tbl_dir = tables_dir,
+        done_dir = done_dir
+    shell:
+        """
+        rm {params.tbl_dir}/tmp_counts_raw.csv
+        
+        rm -r {params.tbl_dir}/tmp_*
+        
+        touch {params.done_dir}/tidy.done
+        
+        """
+
+rule complete_run:
+    input:
+        res_config = results_dir + "/config.yaml"
+    output:
+        config["output_dir"] + "/run_complete.txt"
+

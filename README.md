@@ -27,11 +27,11 @@ one experimental variable
 Another thing to consider is the size of the eventual counts table. The maize
 transcriptiome downloaded from ensembl has over 72,000 targets. The practice 
 dataset is only 8 samples but it would like this to scale to about 400 samples.
-It would be hard to load a 72,000 X 400 table into a R enviroment and would 
+It would be hard to load a 72,000 X 400 table into a R environment and would 
 be even harder to run something like rlog normalization on a table that size
 also. So the counts table need to be filtered quite a bit before loading into
 R. The pipeline will have four different thresholds for filtering out low expressed
-genes instead of one since I'm intreasted in how different filtering and normalization
+genes instead of one since I'm interested in how different filtering and normalization
 methods could effect the PCAs. 
 
 
@@ -95,36 +95,53 @@ conda env create -f environment.yml
 activate snakemake_env
 
 
-
-
-
-# run the snakemake 
+# run the snakemake to make a dag figure 
 snakemake -c1 -s src/Snakefile \
-test/RunA_Maize/done/all_counts_moved.done
-
-
-# run this if you want a nice figure
-snakemake -c1 --dag -s src/Snakefile \
-test/20221020_Celegans/output/done/all_counts_moved.done | dot -Tsvg > \
+--configfile data/configs/ConfigA.yaml \
+--dag test/RunA_Maize/done/run.done | dot -Tsvg > \
 figures/dag.svg
 
-# looks like it will work
+# run the snakemake for reals 
+snakemake -c1 -s src/Snakefile --configfile data/configs/ConfigA.yaml test/RunA_Maize/done/run.done 
 
-snakemake -c1 --use-conda --dag --configfile data/configs/ConfigA.yaml \
--s src/Snakefile test/RunA_Maize/tables/counts_filtered_medi100.csv | dot -Tsvg > \
-figures/maize_dag.svg
+# the config gets confused with the line
+snakemake -c1 --configfile data/configs/ConfigA.yaml -s src/Snakefile test/RunA_Maize/run_complete.txt
 
-snakemake -c1 --use-conda --configfile data/configs/ConfigA.yaml \
--s src/Snakefile test/RunA_Maize/tables/counts_filtered_medi100.csv 
-
-
-
-snakemake -c1 --use-conda -s src/Snakefile \
-test/RunA_Maize/done/tidy_up.done
 
 ```
 
 ## Development diary 
+
+### 2022_12_22 
+
+Had a bunch of things to do so another delay. Need to wrap this up and 
+do some work on scRNA-Seq stuff though so lets wrap this up. I have 
+to test and write out a few late stage rules but the flow of the rules 
+should be ready now 
+
+
+### 2022_12_08 
+
+Test all 3 Rscripts in a single R environment through the command line
+pseduoalignment_figures.R -
+vst_norm.R -
+pca_analysis.R -
+
+Create a rule that places the following data into a directory called
+report_{config["run_name"]} 
+
+fastqc/*
+figures/*
+tables/* after removing the tmp_* files and directories 
+the config file 
+
+The next rule would be to create a streamlit report of the figures with 
+a couple prewritten sentences about the project itself.
+
+Set filter threshold as a config setting. If the sample number 
+of threshold 
+
+
 
 ### 2022_12_03
 
