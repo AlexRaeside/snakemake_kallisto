@@ -267,37 +267,51 @@ rule create_tmp_and_summary_files:
 
 rule aggregate_tmp_counts:
     """
-    This rule goes to each of kallisto pseduoalignment counts files produced
-    for the different samples and combines the counts into a single
-    tables/tmp_counts_summary.csv file.
-
-    It also combines the pseduoalignment stats into a single
-
-
-    This rule contains the directory resources in order
-    to prevent multithreading at this point as that would lead
-    to multiple
     
-    This needs to be replaced so it clearly loops through samples 
-    instead of needed to be set at rescources one.
-
+    This rule requires all kallisto quants on samples to be complete
+    and for blank files tmp_counts_raw.csv and counts_summary.csv 
+    to place the data from each kallisto run
+    
+    The output will be aggreagte_tmp_copunts.done which will be 
+    used as a input for the transpose and aggreagte rules.
 
     """
     input:
-        sample_counts =  quant_dir + "/{sample}/abundance.tsv",
-        sample_summary = quant_dir + "/{sample}/run_info.json",
+        all_sample_counts = expand(
+            quant_dir + "/{sample}/abundance.tsv", sample = SAMPLES),
         total_counts_tbl = config["output_dir"] +"/tables/tmp_counts_raw.csv",
         total_counts_summary = config["output_dir"] +"/tables/counts_summary.csv"
     output:
-        move_done = config["output_dir"] +"/done/counts_moved_{sample}.done"
+        move_done = config["output_dir"] +"/done/tmp_aggregate.done"
     resources: threads=1
     params:
-        sample_name = "{sample}"
+        sample_list = SAMPLES,
+        work_dir =  config["output_dir"]
     run:
-        kal.aggregate_counts(
-            params.sample_name, input.sample_counts, input.total_counts_tbl)
-        kal.aggregate_summary(
-            params.sample_name, input.sample_summary, input.total_counts_summary)
+        
+        # loop through each of the samples and aggreagte counts 
+        # into tmp_counts_raw.csv
+        
+        for s in params.sample_list:
+            
+            # aggregate counts requires three arguments 
+            # sample_name, kallisto counts file and the tmp counts 
+            # file to be aggreagted into 
+            
+            kallisto_counts = params.work_dir + "/quant/" + s + "/abundance.tsv"
+            
+            kal.aggregate_counts(
+                params.sample_name, 
+                kallisto_counts, 
+                input.total_counts_tbl)
+            
+            kallisto_summary = params.work_dir + "/quant/" + s + "/run_info.json"
+            
+            kal.aggregate_summary(
+                params.sample_name, 
+                kallisto_summary,
+                input.total_counts_summary)
+        
         shell(
             "touch {output.move_done}"
         )
@@ -310,10 +324,7 @@ rule transpose_and_filter_counts:
     
     """
     input:
-        move_done = expand(
-            "{out}/done/counts_moved_{sample_id}.done",
-            out = config["output_dir"], sample_id = SAMPLES),
-        tmp_counts = tables_dir + "/tmp_counts_raw.csv"
+        move_done = config["output_dir"] +"/done/tmp_aggregate.done"
     output:
         filter_done = config["output_dir"] +"/done/counts_filtered.done"
     params:
@@ -509,5 +520,10 @@ rule complete_run:
     input:
         res_config = results_dir + "/config.yaml"
     output:
-        config["output_dir"] + "/run_complete.txt"
+        config["output_dir"] + "/done/run.done"
+    shell:
+        """
+        touch {output}
+        
+        """
 
