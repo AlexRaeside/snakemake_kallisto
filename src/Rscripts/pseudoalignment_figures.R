@@ -6,30 +6,32 @@
 
 ##-------- Setting environment -------------------------------------------------
 
-require(tidyr)
-require(plotly)
-require(ggplot2)
-require(readr)
-require(yaml)
-require(dplyr)
-require(svglite)
-require(htmlwidgets)
-require(argparser)
+require(tidyr, quietly = TRUE)
+require(plotly, quietly = TRUE)
+require(ggplot2, quietly = TRUE)
+require(readr, quietly = TRUE)
+require(yaml, quietly = TRUE)
+require(dplyr, quietly = TRUE)
+require(svglite, quietly = TRUE)
+require(htmlwidgets, quietly = TRUE)
 
 ##--- snakemake input -----------------------------------------------------------
 
 
 
-work_dir <- snakemake@params[['out']]
+work_dir <- snakemake@params[["out"]]
 
 ##------- Loading tables -------------------------------------------------------
 
 # work_dir <- "test/RunA_Maize"
 
 
+counts_summary_path <- paste0(work_dir, "/tables/counts_summary.csv")
+
+
 # 
 counts_summary <- read_csv(
-    paste0(work_dir, "/tables/counts_summary.csv"), 
+    counts_summary_path, 
     show_col_types = FALSE)
 
 ##----- Create static figure --------------------------------------------------

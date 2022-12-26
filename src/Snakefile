@@ -21,10 +21,7 @@ env_kallisto_fastqc = "kallisto_fastqc_conda.yml"
 env_rscripts = "rscripts_conda.yml"
 
 
-# set time were the pipeline beginnings 
-# write out later into the config file 
 
-start_time = datetime.datetime.now()
 
 # Some variables are used repeatly in the snakemake
 # so are stated at the beginning of the pipeline
@@ -292,23 +289,23 @@ rule aggregate_tmp_counts:
         # loop through each of the samples and aggreagte counts 
         # into tmp_counts_raw.csv
         
-        for s in params.sample_list:
+        for sample in params.sample_list:
             
             # aggregate counts requires three arguments 
             # sample_name, kallisto counts file and the tmp counts 
             # file to be aggreagted into 
             
-            kallisto_counts = params.work_dir + "/quant/" + s + "/abundance.tsv"
+            kallisto_counts = params.work_dir + "/quant/" + sample + "/abundance.tsv"
             
             kal.aggregate_counts(
-                params.sample_name, 
+                sample, 
                 kallisto_counts, 
                 input.total_counts_tbl)
             
-            kallisto_summary = params.work_dir + "/quant/" + s + "/run_info.json"
+            kallisto_summary = params.work_dir + "/quant/" + sample + "/run_info.json"
             
             kal.aggregate_summary(
-                params.sample_name, 
+                sample, 
                 kallisto_summary,
                 input.total_counts_summary)
         
@@ -371,15 +368,12 @@ rule VST_normalize:
     """
     input:
         filter_aggregate_done = config["output_dir"] +"/done/filter_aggregate.done",
-        filtered_counts_file = expand(
-            "{tables}/counts_filtered_medi{th}.csv",
-            tables = tables_dir,
-            th = ["25", "50", "100", "200"])
+        filtered_counts_file = tables_dir + "/counts_filtered_medi200.csv"
     params: 
         out_dir = tables_dir
     output:
         vst_counts_file = tables_dir + "/vst_counts_filtered_medi{th}.csv"
-    script: "Rscripts/pseudoalignment_figures.R"
+    script: "Rscripts/vst_norm.R"
 
 
 rule alignment_summary_figures:
@@ -388,9 +382,7 @@ rule alignment_summary_figures:
     summary stats
     """
     input:
-        stats_moved = expand(
-            "{out}/done/counts_moved_{sample_id}.done",
-            out = config["output_dir"], sample_id = SAMPLES),
+        move_done = config["output_dir"] +"/done/tmp_aggregate.done",
         filter_aggregate_done = config["output_dir"] +"/done/filter_aggregate.done",
         stats_summary_file = tables_dir + "/counts_summary.csv",
     output:
@@ -450,8 +442,8 @@ rule move_final_files:
         cp {params.tbl_dir}/counts_*.csv {params.res_dir}/.
         
         # move figures 
-        mkdir figures
-        cp {params.fig_dir}/* {params.res_dir}/figures/.
+        mkdir {params.res_dir}/figures
+        cp -r {params.fig_dir}/* {params.res_dir}/figures/.
         
         # move plotly_wedgits
         mkdir {params.res_dir}/plotly_wedgits
@@ -479,16 +471,13 @@ rule write_config:
         new_config = {
             "run_name" : config["run_name"],
             "fasta" : config["fasta"],
-            "metadata" : cnofig["metadata_experiment_col"],
+            "experimental_variable" : config["metadata_experiment_col"],
             "n_samples": len(summary_stats.index),
             "total_reads_n" : sum(summary_stats["n_processed"]),
             "total_pseduoaligned_n" : sum(summary_stats["n_pseudoaligned"]) ,
             "total_pseduoaligned_p" : round(
-                sum(
-                    summary_stats["n_pseudoaligned"]) / sum(
-                        summary_stats["n_processed"])),
-            "run_start_time": str(start_time),
-            "run_end_time": str(datetime.datetime.now())
+                sum(summary_stats["n_pseudoaligned"]) / sum(
+                        summary_stats["n_processed"]), 2)
             }
         
         # write out new config file into the 

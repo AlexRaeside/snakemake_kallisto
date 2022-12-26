@@ -17,9 +17,10 @@ require(tibble, quietly = TRUE)
 counts_file <- snakemake@input[["filtered_counts_file"]]
 
 # tables directory to write the resulting file 
-out_dir <- snakemake@input[["out_dir"]]
+out_dir <- snakemake@params[["out_dir"]]
 
 # test file 
+
 
 #counts_file <- "test/RunA_Maize/tables/counts_filtered_medi200.csv"
 #out_dir <- "."

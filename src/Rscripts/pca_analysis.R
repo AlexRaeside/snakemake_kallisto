@@ -14,23 +14,23 @@
 
 ###----- Set the environment ---------------------------------------------------
 
-require(tidyverse)
-require(ggplot2)
-require(plotly)
-require(dplyr)
-require(svglite)
-require(htmlwidgets)
-require(argparser)
+require(tidyverse, quietly = TRUE)
+require(ggplot2, quietly = TRUE)
+require(plotly, quietly = TRUE)
+require(dplyr, quietly = TRUE)
+require(svglite, quietly = TRUE)
+require(htmlwidgets, quietly = TRUE)
+
 
 
 
 ###------ handle input ---------------------------------------------------------
 
-counts_file <- snakemake@parmas["counts"]
-metadata_file <-snakemake@params["meta"]
-out <- snakemake@params["out"]
-sample_col <- snakemake@params["sample_col"]
-exp_col <- snakemake@params["exp_col"]
+counts_file <- snakemake@params[["counts"]]
+metadata_file <-snakemake@params[["meta"]]
+out_dir <- snakemake@params[["out"]]
+sample_col <- snakemake@params[["sample_col"]]
+exp_col <- snakemake@params[["exp_col"]]
 
 
 ### ----- PCA analysis ---------------------------------------------------------
