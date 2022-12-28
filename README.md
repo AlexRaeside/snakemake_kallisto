@@ -12,104 +12,73 @@ date: "2022-10-20"
 A Bioinformatics project to show that I can create basic NGS pipeline using some
 common bioinformatics tools like bioconda, snakemake, python and R.
 
-The project snakemake pipeline which takes a
-transcriptiome fasta file and set of singe-read RNA-Seq fastq files
-and produces a counts table, or 'estimated counts' as this has to be in kallisto
-in order to run on my laptop. Once counts have fastq files have been produced,
-counts are aggregated into a single counts file and filtered before being
-used to create a PCA figures. After the tables and figures are produced the
-pipeline places the important files into a separate results folder which
-can be zipped up and sent elsewhere. Maybe to be used in a streamlit project
-at some point.
+[Snakemake](https://snakemake.readthedocs.io/en/stable/) pipeline which takes a
+transcriptiome fasta file and singe-read RNA-Seq fastq files and create counts
+tables using [Kallisto](https://pachterlab.github.io/kallisto/about). 
+Strictly speaking Kallisto does not align reads it pseudoaligns them using
+fancy matching so doesn't produce a BAM or anything I can use to do varaint 
+calling or anything like that. Kallisto was used since it works well on a laptop.
 
-There is plenty that could be improved here like getting the snakemake to 
-work on both single and paired reads and getting the PCA plotly plots to show 
-samples colored by different variables but for now think of the 
-project just as evidence that I am able to create basic automated NGS pipelines 
-using python, R and shell. 
+Once a counts table is produce the snakemake pipeline will then create 
+some basic QC plots showing the porportion of reads pseudoaligned and 
+a PCA with the samples coloured by a experimental variable found in the 
+metdata. Along with .png and .svg files for the figures, plotly wedgits made 
+with the [plotly r]() package will also be produced which can be added
+to a [quarto]() or [streamlit]() report at some point.
 
-## Some intreasting things about the project
+There is no particular reason for a NGS pipeline to create little 
+art works but I really just made this to practice stringing 
+python, R and shell togtheir in a automation pipeline that 
+scale with additional cores. 
 
-### Edit config.yaml not the snakemake
-
-To run the pipeline on different datasets, the user edits the config file and not
-the snakemake. Plus there are three different ways to specfify what samples 
-you want processed. You can place a path to each sample fastq file as a list 
-in the config, give a directory which contains the fastq files or create your
-own sample table linking sample names to files. The idea is to keep the pipeline
-convient for users ether runnng 20 or 200 fastq samples. 
-
-There does appear to be some difficulty in getting snakemake to read the config 
-file correctly though. When executing the snakemake command if the desired 
-output file is argument is palced after the conf file param and config file 
-then snakemake will assume the output file is another config file and try to 
-open it, crashing the program. 
-
-### Scales vertically, maybe horizontenially later
-
-
-### Reprodocible, more or less 
-
-Software reproducibility 
-[here](https://www.software.ac.uk/blog/2017-02-20-software-reproducibility-possible-and-practical) 
-means the ability for someone to replicate a
-computational experiment that was done by someone else, using the same 
-software and data, and then to be able to change part of it (the software 
-and/or the data) to better understand the experiment and its bounds.
-
-I believe the project achieves this. As long as the user has snakemake, conda 
-and mamba installed in PATH which is not particularly hard then the other 
-most complex software requirements like fastqc, kallisto and the R packages 
-are downloaded as conda virtual environments. The config files for the conda
-environments can be found in the src/ folder. Only one R package used, aRtsy, 
-is currently not part of the conda R repo so has to be installed from CRAN the
-first time the rscript. 
-
-### Creates HTML wedgits along with .pngs
-
-### The full counts table is never loaded into memory
-
-### Kallisto does not align reads it pseudoaligns 
-
-
-### Makes some art using the aRtsy package
 
 ## Running the Snakemake 
 
+Once cloned the repo contains configs and metadata for two 
+test runs on maize and rat data. To download the rest of the
+data, FASTQ reads and FASTA transcriptomes, run the two
+shell scripts in the scr/ folder.
 
-Snakemake itself is easiest to download from the conda repository bioconda.
+'''
 
-Also download mamba to which will help download the programs in the conda 
-environments faster.
+src/download_exampleA.sh
+src/download_exampleB.sh
 
+'''
 
-In the data folder there are metadata files and configs for two test runs, 
-what's missing for each run is the FASTQ samples of RNA-Seq reads and FASTA
-transcriptomes to align them too. To download the FASTQ and FASTA files 
-run the two shell scripts, download_a.sh and download_b.sh from the project
-folder. 
+Download snakemake and mamba. Mamba is used
+to quickly download the other programs and 
+R pcakages in conda enviroments.
 
+'''
+conda install snakemake mamba 
 
-The shell scripts contain wget commands for downloading the FASTQ files
-from SRA and downloading the FASTA transcriptomes from ensembl. Now you have
-the FASTQ samples, metadata table as a csv file and, FASTA transcriptome and 
+'''
 
+Before running the pipeline from start to 
+finish, generate a DAG diagram to make sure 
+the rules and config are connecting correctly.
 
+'''
 
-## Config parameters 
-
-
-
-
-
-
-
-
-
-## Some figures from the example data
-
-### Example A
+'''
 
 
+If the DAG figure looks like the DAG at 
+the bottom of this README then the snakemake is 
+good to go. Using 1 core the full pipeline 
+will take around a hour. 
 
-### Example B
+'''
+
+
+'''
+
+## Example figures 
+
+| ![ DAG for dataset A](figures/maize_dag.svg)
+||:--:|| 
+<b>Image Credits - Fig.1 - DAG for dataset A, pseduoaligning 8 samples to maize transcriptome </b>|
+
+
+
