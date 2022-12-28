@@ -76,7 +76,7 @@ will take around a hour.
 
 ## Example figures 
 
-| ![ DAG for dataset A](figures/maize_dag.svg)
+| ![ DAG for dataset A](figures/maize_dag.png)
 ||:--:|| 
 <b>Image Credits - Fig.1 - DAG for dataset A, pseduoaligning 8 samples to maize transcriptome </b>|
 
