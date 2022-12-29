@@ -103,9 +103,9 @@ snakemake -s src/snakefile.smk \
 
 
 ![ DAG for dataset A](figures/maize_dag.svg)
-* 8 FASTQ samples pseudoaligned to maize transcriptome *
+8 FASTQ samples pseudoaligned to maize transcriptome
 
 ![Pseudoalignment summary for dataset A](figures/maize_pseudoalignment_summary.svg)
 
 
-![PCA for dataset A](figures/maize_pca_counts_filtered_medi200.svg)
+![PCA for dataset A](figures/maize_pca_vst_counts_filtered_medi200.svg)
