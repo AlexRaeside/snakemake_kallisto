@@ -1,11 +1,4 @@
----
-title: "Kallisto Snakemake"
-output: html_document
-date: "2022-10-20"
----
-
-
-# Creating a Kallisto Snakemake pipeline for single-read RNA-Seq
+# Creating a Kallisto_Snakemake pipeline for single-read RNA-Seq
 
 ## Overview
 
@@ -29,7 +22,11 @@ to a [quarto]() or [streamlit]() report at some point.
 There is no particular reason for a NGS pipeline to create little 
 art works but I really just made this to practice stringing 
 python, R and shell togtheir in a automation pipeline that 
-scale with additional cores. 
+scale with additional cores. There is a few things to add like 
+creating additional summary tables of the FASTQC reports of 
+each of the samples and it would be good to adapt the 
+pipeline for parired-end reads. Am not currently 
+adding to the snakemake pipeline.
 
 
 ## Running the Snakemake 
@@ -50,36 +47,65 @@ Download snakemake and mamba. Mamba is used
 to quickly download the other programs and 
 R pcakages in conda enviroments.
 
-``
+```
 conda install snakemake mamba 
 
-``
-
-Before running the pipeline from start to 
-finish, generate a DAG diagram to make sure 
-the rules and config are connecting correctly.
-
 ```
+Once snakemake and mamba are installed and
+added to path its time to run the sankemake pipeline 
 
 ```
 
 
-If the DAG figure looks like the DAG at 
+# create a working directory 
+# same path as the working directory in the config
+
+mkdir test/exampleA
+
+# before running the full snakemake 
+# try creating a DAG figure and 
+# rulegraoh figure to check the rules 
+# and config file are working corrrectly 
+
+
+snakemake -s src/snakefile.smk \
+--config-file data/configs/configA.yaml \
+-c1 -DAG test/exampleA/done/art.done | dot \
+-tsvg > figures/testA_DAG.svg
+
+snakemake -s src/snakefile.smk \
+--config-file data/configs/configA.yaml \
+-c1 --rulegraph test/exampleA/done/art.done | dot \
+-tsvg > figures/testA_rules.svg
+
+```
+
+If the DAG and rule graph figure looks like the figures at 
 the bottom of this README then the snakemake is 
 good to go. Using 1 core the full pipeline 
 will take around a hour. 
 
-'''
+```
+
+snakemake -s src/snakefile.smk \
+--config-file data/configs/configA.yaml \
+-c1 --rulegraph test/exampleA/done/art.done | dot \
+-tsvg > figures/testA_rules.svg
 
 
-'''
+```
 
 ## Example figures 
 
+
+![ Snakemake rule graph]()
+
+
+
 ![ DAG for dataset A](figures/maize_dag.svg)
-* 8 FASTQ samples pseudoaligned to maize transcriptome 
+* 8 FASTQ samples pseudoaligned to maize transcriptome *
 
-![Pseudoalignment summary for dataset A]()
+![Pseudoalignment summary for dataset A](maize_pseudoalignment_summary.svg)
 
 
-![Pseudoalignment summary for dataset A]()
+![PCA for dataset A](maize_pca_counts_filtered_medi200.svg)
