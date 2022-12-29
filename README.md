@@ -39,29 +39,29 @@ test runs on maize and rat data. To download the rest of the
 data, FASTQ reads and FASTA transcriptomes, run the two
 shell scripts in the scr/ folder.
 
-'''
+```
 
 src/download_exampleA.sh
 src/download_exampleB.sh
 
-'''
+```
 
 Download snakemake and mamba. Mamba is used
 to quickly download the other programs and 
 R pcakages in conda enviroments.
 
-'''
+``
 conda install snakemake mamba 
 
-'''
+``
 
 Before running the pipeline from start to 
 finish, generate a DAG diagram to make sure 
 the rules and config are connecting correctly.
 
-'''
+```
 
-'''
+```
 
 
 If the DAG figure looks like the DAG at 
@@ -76,9 +76,10 @@ will take around a hour.
 
 ## Example figures 
 
-| ![ DAG for dataset A](figures/maize_dag.svg)
-||:--:|| 
-|<b>Image Credits - Fig.1 - DAG for dataset A, pseduoaligning 8 samples to maize transcriptome </b>|
+![ DAG for dataset A](figures/maize_dag.svg)
+* 8 FASTQ samples pseudoaligned to maize transcriptome 
+
+![Pseudoalignment summary for dataset A]()
 
 
-
+![Pseudoalignment summary for dataset A]()
