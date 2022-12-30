@@ -115,14 +115,28 @@ snakemake -s src/snakefile.smk \
 
 
 ![ Snakemake rule graph](figures/testA_rulegraph.svg)
+
+
 Snakemake rule graph for single-read RNA-Seq
 
 
 ![ DAG for dataset A](figures/maize_dag.svg)
+
+
 8 FASTQ samples pseudoaligned to maize transcriptome
 
 ![Pseudoalignment summary for dataset A](figures/maize_pseudoalignment_summary.svg)
+
+
 Pseudoalignment summary for test A
 
 ![PCA for dataset A](figures/maize_pca_vst_counts_filtered_medi200.svg)
+
+
 PCA for dataset A based on VST normalization of counts
+
+The summary table gets used to generate some via aRtsy
+
+![Art for DatasetA](figures/title_art.svg)
+
+
