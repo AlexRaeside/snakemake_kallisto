@@ -67,20 +67,38 @@ mkdir test/exampleA
 # rulegraoh figure to check the rules 
 # and config file are working corrrectly 
 
+# Perform a dry run 
+# Will determine the about of jobs necessary 
+# to produce the output file art.done 
+# if you don't want to use aRtsy you can 
+# use run.done as the final output file
 
-snakemake -s src/snakefile.smk \
---config-file data/configs/configA.yaml \
--c1 -DAG test/exampleA/done/art.done | dot \
--tsvg > figures/testA_DAG.svg
+snakemake \
+--snakefile src/Snakefile \
+--configfile data/configs/ConfigA.yaml \
+--cores 1 --dry-run test/exampleA/done/art.done
 
-snakemake -s src/snakefile.smk \
---config-file data/configs/configA.yaml \
--c1 --rulegraph test/exampleA/done/art.done | dot \
--tsvg > figures/testA_rules.svg
+# Create a rule graph
+snakemake \
+--snakefile src/Snakefile \
+--configfile data/configs/ConfigA.yaml \
+--cores 1 --rulegraph test/exampleA/done/art.done | dot -Tsvg > \
+figures/testA_rulegraph.svg
+
+
+# Create a DAG 
+snakemake \
+--snakefile src/Snakefile \
+--configfile data/configs/ConfigA.yaml \
+--cores 1 --DAG test/exampleA/done/art.done | dot -Tsvg > \
+figures/testA_dag.svg
+
+
+
 
 ```
 
-If the DAG and rule graph figure looks like the figures at 
+If the DAG and rule graph figures looks like the figures at 
 the bottom of this README then the snakemake is 
 good to go. Using 1 core the full pipeline 
 will take around a hour. 
@@ -89,23 +107,22 @@ will take around a hour.
 
 snakemake -s src/snakefile.smk \
 --config-file data/configs/configA.yaml \
--c1 --rulegraph test/exampleA/done/art.done | dot \
--tsvg > figures/testA_rules.svg
-
+-c1 test/exampleA/done/art.done 
 
 ```
 
 ## Example figures 
 
 
-![ Snakemake rule graph]()
-
+![ Snakemake rule graph](figures/testA_rulegraph.svg)
+Snakemake rule graph for single-read RNA-Seq
 
 
 ![ DAG for dataset A](figures/maize_dag.svg)
 8 FASTQ samples pseudoaligned to maize transcriptome
 
 ![Pseudoalignment summary for dataset A](figures/maize_pseudoalignment_summary.svg)
-
+Pseudoalignment summary for test A
 
 ![PCA for dataset A](figures/maize_pca_vst_counts_filtered_medi200.svg)
+PCA for dataset A based on VST normalization of counts
