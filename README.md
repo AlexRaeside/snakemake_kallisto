@@ -140,3 +140,22 @@ The summary table gets used to generate some via aRtsy
 ![Art for DatasetA](figures/title_art.svg)
 
 
+## Dev Diary
+
+### 2023 01 09 
+I've been thinking about what I can add to this or what would need to improve in order for the project to seem more 'professional' at first glance. In terms of project structure, there are a few things I can improve by placing conda envs into a separate directory and more importantly
+placing the snakemake rules and helper functions into separate files. It would make the snakemake file itself look a lot clearer and help me understand which rules could be reimported and reused if I want to make a paired-end read RNA-Seq pipeline along with the single-read RNA-Seq pipeline I have now.
+
+
+I have been thinking about visualization and reporting and how I would want to add this. Originally the idea was to have the pipeline create a projects results folder that could be opened and viewed by a web app, either RShiny or Streamlit. But I've been thinking does need to be a web app
+that would need a whole bunch of stuff or just a standalone html report that could be emailed to the user when the pipeline is complete.
+
+
+Quarto has a function to produce a standalone html from a quarto markdown .qmd file. Might be worth looking at as the final stage of the analysis. 
+I'll probably create and close a seperate branch for just tidying up the code before I think to much about reporting. 
+I could use really improve the art generation using something like [this](https://medium.com/@yanhann10/paint-like-the-artist-piet-mondrian-in-r-784c5264d5cc)
+
+
+
+
+
